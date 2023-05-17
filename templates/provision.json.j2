@@ -1,38 +1,72 @@
 {
- "autoboot": {{ autoboot }}
-,"brand": "{{ brand }}"
+  "autoboot": {{ autoboot }}
+, "brand": "{{ brand }}"
  {% if "lx" in brand %}
-  ,"kernel_version": "{{ kernel_version }}"
+, "kernel_version": "{{ kernel_version }}"
  {% endif %}
-,"image_uuid": "{{ image_uuid }}"
+, "firewall_enabled": "{{ firewall_enabled }}"
+, "image_uuid": "{{ image_uuid }}"
 , "max_physical_memory": {{ max_phy_mem }}
 , "cpu_cap": {{ cpu_cap }}
 , "alias": "{{ alias }}"
 , "hostname": "{{ alias }}.{{ domain }}"
+, "delegate_dataset": "{{ delegate_dataset }}"
+, "limit_priv": "{{ limit_priv }}"
 , "dns_domain": "{{ domain }}"
+, "dns_search": "{{ domain }}"
 , "quota": "{{ quota }}"
 , "resolvers": [
-  {% for r in resolvers %}
+  {% for resolver in resolvers %}
     {% if loop.first %}
-      "{{ r }}"
+      "{{ resolver }}"
     {% else %}
-      ,"{{ r }}"
+      ,"{{ resolver }}"
     {% endif %}
   {% endfor %}
  ]
 , "nics": [
  {% for nic in nics %}
   {
-   "interface": "{{ nic.interface }}"
-   ,"nic_tag": "{{ nic.nic_tag}}"
+     "primary": {{ primary }}
+   , "interface": "{{ nic.interface }}"
+   , "nic_tag": "{{ nic.nic_tag }}"
    {% if nic.vlan_id is defined %}
-    ,"vlan_id": "{{ nic.vlan_id }}"
+   , "vlan_id": "{{ nic.vlan_id }}"
    {% endif %}
-   ,"ip": "{{ nic.ip }}"
-   {% if nic.gateway is defined %}
-    ,"gateway": "{{ nic.gateway }}"
+   , "ips":[
+  {% for cidr in nic.ips %}
+    {% if loop.first %}
+      "{{ cidr }}"
+    {% else %}
+      ,"{{ cidr }}"
+    {% endif %}
+  {% endfor %}
+ ]
+   {% if nic.gateways is defined %}
+   , "gateways": [
+      {% for gateway in nic.gateways %}
+        {% if loop.first %}
+           "{{ gateway }}"
+        {% else %}
+          , "{{ gateway }}"
+        {% endif %}
+      {% endfor %}
+ ]
    {% endif %}
-   ,"netmask": "{{ nic.netmask }}"
+   {% if nic.allowed_ips is defined %}
+   , "allowed_ips": [
+      {% for cidr in nic.allowed_ips %}
+        {% if loop.first %}
+          "{{ cidr }}"
+        {% else %}
+          ,"{{ cidr }}"
+        {% endif %}
+      {% endfor %}
+ ]
+   {% endif %}
+   , "allow_ip_spoofing: "{{ nic.allow_ip_spoofing }}"
+   , "allow_mac_spoofing: "{{ nic.allow_mac_spoofing }}"
+   , "allow_unfiltered_promisc: "{{ nic.allow_unfiltered_promisc }}"
   }
    {% if not loop.last %}
     ,
@@ -40,13 +74,13 @@
   {% endfor %}
  ]
 {% if filesystems is defined %}
-,"filesystems": [
+, "filesystems": [
   {% for fs in filesystems %}
     {
-      "source": "{{ fs.source }}"
-      ,"target": "{{ fs.target }}"
-      ,"type": "lofs"
-      ,"options": [
+       "source": "{{ fs.source }}"
+     , "target": "{{ fs.target }}"
+     , "type": "lofs"
+     , "options": [
         {% if fs.read_only %}
         "ro",
 	{% endif %}
@@ -59,9 +93,9 @@
   {% endfor %}
   ]
 {% endif %}
-,"customer_metadata": {
-     "root_authorized_keys":"{{ root_authorized_keys }}"
-     ,"user-script" : "{{ user_script }}"
+, "customer_metadata": {
+      "root_authorized_keys":"{{ root_authorized_keys }}"
+    , "user-script" : "{{ user_script }}"
   }
 
 }
