@@ -9,11 +9,13 @@ template_file: provision.json.j2
 domain: local
 user_script: "/usr/sbin/mdata-get root_authorized_keys > ~root/.ssh/authorized_keys ; /usr/sbin/mdata-get root_authorized_keys > ~admin/.ssh/authorized_keys"
 
-bootstrap_ver: 2017Q3
-bootstrap_url: https://pkgsrc.joyent.com/packages/SmartOS/bootstrap/bootstrap-{{ bootstrap_ver }}-tools.tar.gz
-bootstrap_sha256sum: bb70dbde6b687b35a7562b06f68837ddb8204c65ab387421ed1a1215449ed05f
+# from https://pkgsrc.joyent.com/install-on-illumos | Tools (SmartOS GZ)
+bootstrap_ver: 20230313
+bootstrap_sha256sum: facd7be71574af6e11561203138577eed108969f
+bootstrap_tar: bootstrap-trunk-tools-{{ bootstrap_ver }}.tar.gz
+bootstrap_url: https://pkgsrc.smartos.org/packages/SmartOS/bootstrap/{{ bootstrap_tar }}
 
 smartos_pkgin_path: /opt/tools/bin/pkgin
-smartos_python_path: /opt/tools/bin/python2
-smartos_bootstrap_path: /opt/ansible_python_bootstrap.tgz
-smartos_python_pkgname: python27
+smartos_python_path: /opt/tools/bin/python3
+smartos_bootstrap_path: /opt/bootstrap-trunk-tools.tar.gz
+smartos_python_pkgname: python311
