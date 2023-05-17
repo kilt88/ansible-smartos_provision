@@ -1,3 +1,5 @@
+( Forked from https://github.com/precurse/ansible-smartos_provision )
+
 SmartOS Provision
 =========
 
