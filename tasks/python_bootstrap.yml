@@ -3,31 +3,38 @@
    raw: test -f {{ smartos_python_path }}
    register: python_file
    ignore_errors: True
+   delegate_to: "{{ hypervisor_host }}"
 
  - name: Check for pkgin command
    raw: test -f {{ smartos_pkgin_path }}
    register: pkgin_file
    ignore_errors: True
+   delegate_to: "{{ hypervisor_host }}"
    when: hypervisor_install_python and python_file|failed
 
  - name: Check for bootstrap install file
    raw: test -f {{ smartos_bootstrap_path }}
    register: bootstrap_file
    ignore_errors: True
+   delegate_to: "{{ hypervisor_host }}"
    when: python_file|failed and pkgin_file|failed
 
  - name: Download bootstrap file only if required
    raw: curl -ks {{ bootstrap_url }} -o {{ smartos_bootstrap_path }}
+   delegate_to: "{{ hypervisor_host }}"
    when: bootstrap_file|failed
 
  - name: Verify bootstrap file
    raw: if [[ `digest -a sha256 {{ smartos_bootstrap_path }}` == "{{ bootstrap_sha256sum }}" ]]; then exit 0; else exit 1; fi
+   delegate_to: "{{ hypervisor_host }}"
    when: python_file|failed and pkgin_file|failed
 
  - name: Extracting bootstrap file
    raw: tar -zxpf {{ smartos_bootstrap_path }} -C /
+   delegate_to: "{{ hypervisor_host }}"
    when: python_file|failed and pkgin_file|failed
 
  - name: Install python
    raw: "{{ smartos_pkgin_path }} -fy install {{ smartos_python_pkgname }}"
+   delegate_to: "{{ hypervisor_host }}"
    when: python_file|failed

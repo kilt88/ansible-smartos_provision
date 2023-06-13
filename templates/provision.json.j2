@@ -4,17 +4,36 @@
  {% if "lx" in brand %}
 , "kernel_version": "{{ kernel_version }}"
  {% endif %}
-, "firewall_enabled": "{{ firewall_enabled }}"
+, "firewall_enabled": {{ firewall_enabled }}
+{% if image_uuid is defined %}
 , "image_uuid": "{{ image_uuid }}"
-, "max_physical_memory": {{ max_phy_mem }}
+{% endif %}
+{% if "joyent" in brand or "lx" in brand %}
+, "max_physical_memory": {{ ram }}
+{% else %}
+, "ram": {{ ram }}
+{% endif %}
 , "cpu_cap": {{ cpu_cap }}
+{% if "bhyve" in brand %}
+{%   if bootrom is defined %}
+, "bootrom": "{{ bootrom }}"
+{%   endif %}
+{%   if vcpus is defined %}
+, "vcpus": {{ vcpus }}
+{%   endif %}
+{%   if bhyve_extra_opts is defined %}
+, "bhyve_extra_opts": "{{ bhyve_extra_opts }}"
+{%   endif %}
+{% endif %}
 , "alias": "{{ alias }}"
 , "hostname": "{{ alias }}.{{ domain }}"
-, "delegate_dataset": "{{ delegate_dataset }}"
+, "delegate_dataset": {{ delegate_dataset }}
 , "limit_priv": "{{ limit_priv }}"
 , "dns_domain": "{{ domain }}"
 , "dns_search": "{{ domain }}"
-, "quota": "{{ quota }}"
+{% if quota is defined %}
+, "quota": {{ quota }}
+{% endif %}
 , "resolvers": [
   {% for resolver in resolvers %}
     {% if loop.first %}
@@ -27,8 +46,13 @@
 , "nics": [
  {% for nic in nics %}
   {
-     "primary": {{ primary }}
-   , "interface": "{{ nic.interface }}"
+     {% if nic.primary is defined %}
+     "primary": {{ nic.primary }},
+     {% endif %}
+     "interface": "{{ nic.interface }}"
+     {% if nic.model is defined %}
+   , "model": "{{ nic.model }}"
+     {% endif %}
    , "nic_tag": "{{ nic.nic_tag }}"
    {% if nic.vlan_id is defined %}
    , "vlan_id": "{{ nic.vlan_id }}"
@@ -64,9 +88,15 @@
       {% endfor %}
  ]
    {% endif %}
-   , "allow_ip_spoofing: "{{ nic.allow_ip_spoofing }}"
-   , "allow_mac_spoofing: "{{ nic.allow_mac_spoofing }}"
-   , "allow_unfiltered_promisc: "{{ nic.allow_unfiltered_promisc }}"
+{% if nic.allow_ip_spoofing is defined %}
+   , "allow_ip_spoofing": {{ nic.allow_ip_spoofing }}
+{% endif %}
+{% if nic.allow_mac_spoofing is defined %}
+   , "allow_mac_spoofing": {{ nic.allow_mac_spoofing }}
+{% endif %}
+{% if nic.allow_unfiltered_promisc is defined %}
+   , "allow_unfiltered_promisc": {{ nic.allow_unfiltered_promisc }}
+{% endif %}
   }
    {% if not loop.last %}
     ,
@@ -93,9 +123,39 @@
   {% endfor %}
   ]
 {% endif %}
-, "customer_metadata": {
-      "root_authorized_keys":"{{ root_authorized_keys }}"
-    , "user-script" : "{{ user_script }}"
+{% if disks is defined %}
+, "disks": [
+{% for disk in disks %}
+  {
+{% if disk.boot is defined %}
+  "boot": {{ disk.boot }},
+{% endif %}
+    "model": "{{ disk.model }}"
+{% if disk.media is defined %}
+  , "media": "{{ disk.media }}"
+{% endif %}
+{% if disk.path is defined %}
+  , "path": "{{ disk.path }}"
+{% endif %}
+{% if disk.nocreate is defined %}
+  , "nocreate": {{ disk.nocreate }}
+{% endif %}
+  , "size": {{ disk.size }}
+{% if disk.compression is defined %}
+  , "compression": "{{ disk.compression }}"
+{% endif %}
   }
-
+   {% if not loop.last %}
+    ,
+   {% endif %}
+{% endfor %}
+  ]
+{% endif %}
+, "customer_metadata": {
+      "root_authorized_keys": "{{ root_authorized_keys }}"
+    , "user-script": "{{ user_script }}"
+  }
+, "tags": {
+      "role": "{{ group_names[0] }}"
+  }
 }

@@ -1,0 +1,102 @@
+---
+
+- name: Create Ansible tmp file for remote VM vars
+  command: mktemp /var/tmp/ansible.XXXXXXX
+  register: tmp_remote_vms_json
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['compute'] }}"
+
+- name: Build json of VMs per compute host in mktemp file (1st use)
+  shell: |
+    for uuid in $(vmadm list -H -o uuid); do
+      json=$(vmadm get $uuid)
+      owner_uuid=$(echo $json | json owner_uuid)
+      role=$(echo $json | json tags.role)
+      IP=$(echo $json | json nics.0.ip)
+      echo "  - uuid: $uuid" >> "{{ item.stdout }}"
+      echo "    owner_uuid: $owner_uuid" >> "{{ item.stdout }}"
+      echo "    role: $role" >> "{{ item.stdout }}"
+      echo "    ip: $IP" >> "{{ item.stdout }}"
+      echo "    hypervisor_host: {{ item.item }}" >> "{{ item.stdout }}"
+    done
+  delegate_to: "{{ item.item }}"
+  loop: "{{ tmp_remote_vms_json.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  register: build_remote_json_vm_file
+  run_once: true
+
+- name: Fetch remote json VM files to local host
+  fetch:
+    src: "{{ item.stdout }}"
+    dest: "/var/tmp/ansible/vars/"
+    flat: true
+  delegate_to: "{{ item.item }}"
+  loop: "{{ tmp_remote_vms_json.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  register: fetched_remote_json_vm_files
+  run_once: true
+  when: build_remote_json_vm_file.changed
+
+- name: Locally assemble remote json VM vars
+  assemble:
+    src: /var/tmp/ansible/vars
+    dest: /var/tmp/ansible/remote_vm_vars.yml
+  delegate_to: localhost
+  register: assemble_remote_vm_vars
+  run_once: true
+  when: fetched_remote_json_vm_files.changed
+
+- name: Add header to local json VM vars
+  lineinfile:
+    path: /var/tmp/ansible/remote_vm_vars.yml
+    line: 'remote_vms:'
+    insertbefore: BOF
+  delegate_to: localhost
+  run_once: true
+  when: assemble_remote_vm_vars.changed
+
+- name: Source vars
+  include_vars:
+    file: /var/tmp/ansible/remote_vm_vars.yml
+  delegate_to: localhost
+  run_once: true
+
+- name: Populate remote VM json in mktemp file (2nd use)
+  template:
+    src: remote_vms.json.j2
+    dest: "{{ item.stdout }}"
+  delegate_to: "{{ item.item }}"
+  loop: "{{ tmp_remote_vms_json.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  run_once: true
+
+- name: Populate remote VM list to compute (hypervisor) hosts
+  command: "fwadm add-rvm -f {{ item.stdout }}"
+  delegate_to: "{{ item.item }}"
+  loop: "{{ tmp_remote_vms_json.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  run_once: true
+
+- name: Clean up remote VM json
+  file:
+    path: "{{ item.stdout }}"
+    state: absent
+  delegate_to: "{{ item.item }}"
+  loop: "{{ tmp_remote_vms_json.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  run_once: true
+
+- name: Clean up local VM vars files
+  file:
+    path: "{{ item }}"
+    state: absent
+  delegate_to: localhost
+  loop:
+    - /var/tmp/ansible/remote_vm_vars.yml
+    - /var/tmp/ansible/vars
+  run_once: true

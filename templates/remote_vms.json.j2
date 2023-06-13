@@ -1,0 +1,14 @@
+{
+  "remoteVMs": [
+{% for host in remote_vms if item.item != host.hypervisor_host %}
+    {
+      "uuid": "{{ host.uuid }}",
+      "owner_uuid": "{{ host.owner_uuid }}",
+      "nics": [ { "ip": "{{ host.ip }}" } ],
+      "tags": { "role": "{{ host.role }}" }
+    }{% if not loop.last %},
+{%      endif %}
+{% endfor %}
+
+  ]
+}
