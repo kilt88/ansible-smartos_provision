@@ -38,5 +38,7 @@
     kernel_version: "{{ imgadm_clean[-1]['manifest']['tags']['kernel_version'] }}"
   when: image_uuid is not defined and brand == "lx"
 
-- name: Importing image uuid
+- name: Import image uuid
   command: imgadm import {{ image_uuid }}
+  register: imgadm_import
+  changed_when: "'Imported image' in imgadm_import.stdout"
