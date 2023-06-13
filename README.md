@@ -52,7 +52,7 @@ image_name: `imgadm avail` from SmartOS global zone will show possible values. (
 
 alias [REQUIRED] Synonymous with virtual machine hostname
 cpu_cap [OPTIONAL] (default: 100)
-max_phy_mem [OPTIONAL] (default: 512)
+ram [OPTIONAL] (default: 512)
 quota [OPTIONAL] (default: 10)
 brand [OPTIONAL] (options: joyent or lx. default: joyent)
 kernel_version [OPTIONAL] (Automatically detected based on image metadata. fallback: 3.16.0)

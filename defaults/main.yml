@@ -1,13 +1,15 @@
 hypervisor_install_python: false
 provision_mode: false
 cpu_cap: 100
-max_phy_mem: 512
+ram: 512
+max_phy_mem: "{{ ram }}"
 quota: 10
 brand: joyent
 kernel_version: 3.16.0
 template_file: provision.json.j2
 domain: local
 user_script: "/usr/sbin/mdata-get root_authorized_keys > ~root/.ssh/authorized_keys ; /usr/sbin/mdata-get root_authorized_keys > ~admin/.ssh/authorized_keys"
+limit_priv: ''
 
 # from https://pkgsrc.joyent.com/install-on-illumos | Tools (SmartOS GZ)
 bootstrap_ver: 20230313
