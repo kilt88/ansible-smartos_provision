@@ -81,6 +81,20 @@
     label: "{{ item.item }}"
   run_once: true
 
+- name: Remove orphan remote VMs
+  shell: |
+    current_remote_vms=$(cat {{ item.stdout }} | json remoteVMs | json -a uuid)
+    for uuid in $(fwadm -j list-rvms | json -a uuid); do
+      echo "$current_remote_vms" | grep -q $uuid
+      [ "$?" -ne 0 ] && fwadm delete-rvm $uuid
+    done
+  failed_when: false
+  delegate_to: "{{ item.item }}"
+  loop: "{{ tmp_remote_vms_json.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  run_once: true
+
 - name: Clean up remote VM json
   file:
     path: "{{ item.stdout }}"
