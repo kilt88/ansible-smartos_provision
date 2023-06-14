@@ -4,7 +4,12 @@
     {
       "uuid": "{{ host.uuid }}",
       "owner_uuid": "{{ host.owner_uuid }}",
-      "nics": [ { "ip": "{{ host.ip }}" } ],
+      "ips": [
+{%   for ip in host.ips | split(' ') %}
+                "{{ ip }}"{% if not loop.last %},
+{%                           endif %}
+{%   endfor %}
+      ],
       "tags": { "role": "{{ host.role }}" }
     }{% if not loop.last %},
 {%      endif %}

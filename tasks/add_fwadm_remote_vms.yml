@@ -12,11 +12,11 @@
       json=$(vmadm get $uuid)
       owner_uuid=$(echo $json | json owner_uuid)
       role=$(echo $json | json tags.role)
-      IP=$(echo $json | json nics.0.ip)
+      IPS=$(echo $json | json nics | grep \"ip\" | awk -F\" 'BEGIN {ORS=" "} {print $4}' | sed 's/ $//')
       echo "  - uuid: $uuid" >> "{{ item.stdout }}"
       echo "    owner_uuid: $owner_uuid" >> "{{ item.stdout }}"
       echo "    role: $role" >> "{{ item.stdout }}"
-      echo "    ip: $IP" >> "{{ item.stdout }}"
+      echo "    ips: \"$IPS\"" >> "{{ item.stdout }}"
       echo "    hypervisor_host: {{ item.item }}" >> "{{ item.stdout }}"
     done
   delegate_to: "{{ item.item }}"
