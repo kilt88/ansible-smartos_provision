@@ -1,7 +1,7 @@
 ---
 
-- include: images.yml
-  delegate_to: "{{ hypervisor_host }}"
+- name: add images
+  include_tasks: images.yml
   when: image_uuid is defined
 
 - name: Creating Ansible tmp file for vm .json

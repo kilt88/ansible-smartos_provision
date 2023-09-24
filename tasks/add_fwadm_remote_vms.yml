@@ -9,10 +9,9 @@
 - name: Build json of VMs per compute host in mktemp file (1st use)
   shell: |
     for uuid in $(vmadm list -H -o uuid); do
-      json=$(vmadm get $uuid)
-      owner_uuid=$(echo $json | json owner_uuid)
-      role=$(echo $json | json tags.role)
-      IPS=$(echo $json | json nics | grep \"ip\" | awk -F\" 'BEGIN {ORS=" "} {print $4}' | sed 's/ $//')
+      owner_uuid=$(vmadm get $uuid | json owner_uuid)
+      role=$(vmadm get $uuid | json tags.role)
+      IPS=$(vmadm get $uuid | json nics | grep \"ip\" | awk -F\" 'BEGIN {ORS=" "} {print $4}' | sed 's/ $//')
       echo "  - uuid: $uuid" >> "{{ item.stdout }}"
       echo "    owner_uuid: $owner_uuid" >> "{{ item.stdout }}"
       echo "    role: $role" >> "{{ item.stdout }}"

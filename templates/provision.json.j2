@@ -1,14 +1,14 @@
 {
-  "autoboot": {{ autoboot }}
+  "autoboot": {% if autoboot %}true{% else %}false{% endif %}
 , "brand": "{{ brand }}"
  {% if "lx" in brand %}
 , "kernel_version": "{{ kernel_version }}"
  {% endif %}
-, "firewall_enabled": {{ firewall_enabled }}
-{% if image_uuid is defined %}
-, "image_uuid": "{{ image_uuid }}"
-{% endif %}
+, "firewall_enabled": {% if firewall_enabled %}true{% else %}false{% endif %}
 {% if "joyent" in brand or "lx" in brand %}
+{%   if image_uuid is defined %}
+, "image_uuid": "{{ image_uuid }}"
+{%   endif %}
 , "max_physical_memory": {{ ram }}
 {% else %}
 , "ram": {{ ram }}
@@ -27,7 +27,7 @@
 {% endif %}
 , "alias": "{{ alias }}"
 , "hostname": "{{ alias }}.{{ domain }}"
-, "delegate_dataset": {{ delegate_dataset }}
+, "delegate_dataset": {% if delegate_zfs_dataset %}true{% else %}false{% endif %}
 , "limit_priv": "{{ limit_priv }}"
 , "dns_domain": "{{ domain }}"
 , "dns_search": "{{ domain }}"
@@ -127,22 +127,26 @@
 , "disks": [
 {% for disk in disks %}
   {
+    "size": {{ disk.size }}
+  , "model": "{{ disk.model }}"
 {% if disk.boot is defined %}
-  "boot": {{ disk.boot }},
+  , "boot": {{ disk.boot }}
 {% endif %}
-    "model": "{{ disk.model }}"
-{% if disk.media is defined %}
+{% if disk.image_uuid is defined %}
+  , "image_uuid": "{{ disk.image_uuid }}"
+{% else %}
+{%   if disk.media is defined %}
   , "media": "{{ disk.media }}"
-{% endif %}
-{% if disk.path is defined %}
+{%   endif %}
+{%   if disk.path is defined %}
   , "path": "{{ disk.path }}"
-{% endif %}
-{% if disk.nocreate is defined %}
+{%   endif %}
+{%   if disk.nocreate is defined %}
   , "nocreate": {{ disk.nocreate }}
-{% endif %}
-  , "size": {{ disk.size }}
-{% if disk.compression is defined %}
+{%   endif %}
+{%   if disk.compression is defined %}
   , "compression": "{{ disk.compression }}"
+{%   endif %}
 {% endif %}
   }
    {% if not loop.last %}
@@ -150,10 +154,22 @@
    {% endif %}
 {% endfor %}
   ]
+{%   if brand == 'bhyve' %}
+{%     set flex_size = namespace(value=0) %}
+{%     for disk in disks %}
+{%       set flex_size.value = flex_size.value + disk.size %}
+{%     endfor %}
+{%     set flex_size.value = ( flex_size.value * flex_size_multiplier ) | int %}
+  , "flexible_disk_size": "{{ flex_size.value }}"
+{%   endif %}
 {% endif %}
+
 , "customer_metadata": {
       "root_authorized_keys": "{{ root_authorized_keys }}"
     , "user-script": "{{ user_script }}"
+{% if cloudinit_custom is defined and cloudinit_custom != "" %}
+    , "cloud-init:user-data": "{{ cloudinit_custom }}"
+{% endif %}
   }
 , "tags": {
       "role": "{{ group_names[0] }}",

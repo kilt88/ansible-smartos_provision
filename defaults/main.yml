@@ -21,3 +21,5 @@ smartos_pkgin_path: /opt/tools/bin/pkgin
 smartos_python_path: /opt/tools/bin/python3
 smartos_bootstrap_path: /opt/bootstrap-trunk-tools.tar.gz
 smartos_python_pkgname: python311
+
+flex_size_multiplier: 1.5
