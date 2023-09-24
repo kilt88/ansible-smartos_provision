@@ -1,60 +1,28 @@
-- include: python_bootstrap.yml
-  delegate_to: "{{ hypervisor_host }}"
+- name: Python bootstrap
+  include_tasks: python_bootstrap.yml
   when: hypervisor_install_python and provision_mode
 
-- name: Get vars
-  setup:
+#- name: Get vars
+#  setup:
+#  delegate_to: "{{ hypervisor_host }}"
+#  when: provision_mode
+
+- name: Get virtual machine uuid
+  command: vmadm list -o uuid -p hostname={{ alias }}.{{ domain }}
   delegate_to: "{{ hypervisor_host }}"
-  when: provision_mode
+  register: vmadm_list
+  changed_when: false
 
-# First check if VM is already provisioned
+- name: Machine exists message
+  debug:
+    msg: "{{ alias }}.{{ domain }} already exists"
+  when: vmadm_list.stdout | length == 36
 
+- name: Add vm
+  include_tasks: add_vm.yml
+  when:
+    - provision_mode
+    - vmadm_list.stdout | length == 0
 
-
-- include: images.yml
-  delegate_to: "{{ hypervisor_host }}"
-  when: provision_mode
-
-# - name: Get virtual machine uuid
-#   command: vmadm list -o uuid -p hostname={{ alias }}.{{ domain }}
-#   delegate_to: "{{ hypervisor_host }}"
-#   register: vmadm_list
-# 
-# - name: set running machine
-#   delegate_to: "{{ hypervisor_host }}"
-#   set_fact: vm_uuid={{ vmadm_list.stdout }}
-# 
-# - debug: var=vm_uuid
-# 
-# - name: Get virtual info
-#   command: vmadm get {{ vm_uuid }}
-#   delegate_to: "{{ hypervisor_host }}"
-#   register: vm_info
-# 
-# - debug: var=vm_info
-# 
-# - fail: msg="blah"
-
-- name: Creating Ansible tmp file for vm .json
-  command: mktemp /tmp/ansible.XXXXXXX
-  register: tmp_json
-  delegate_to: "{{ hypervisor_host }}"
-  when: provision_mode
-
-- name: Populating template file
-  template: src={{ template_file }} dest={{ tmp_json.stdout }}
-  delegate_to: "{{ hypervisor_host }}"
-  when: provision_mode
-
-- name: Provisioning virtual machine
-  shell: cat {{ tmp_json.stdout }} | vmadm create
-  delegate_to: "{{ hypervisor_host }}"
-  when: provision_mode
-
-- name: Waiting 10 secs for SSH daemon
-  wait_for:
-    host: "{{ nics[0]['ip'] }}"
-    port: 22
-    search_regex: OpenSSH
-  delegate_to: "{{ hypervisor_host }}"
-  when: provision_mode
+- name: Add fwadm remote vms
+  include_tasks: add_fwadm_remote_vms.yml

@@ -1,0 +1,47 @@
+---
+
+- name: add images
+  include_tasks: images.yml
+  when: image_uuid is defined
+
+- name: Creating Ansible tmp file for vm .json
+  command: mktemp /var/tmp/ansible.XXXXXXX
+  register: tmp_json
+  delegate_to: "{{ hypervisor_host }}"
+
+- name: Populate provisioning template
+  template: src={{ template_file }} dest={{ tmp_json.stdout }}
+  delegate_to: "{{ hypervisor_host }}"
+
+- name: Provision virtual machine
+  shell: cat {{ tmp_json.stdout }} | vmadm create
+  register: provision
+  delegate_to: "{{ hypervisor_host }}"
+  throttle: 1
+
+- name: Clean up provisioning template
+  file:
+    path: "{{ tmp_json.stdout }}"
+    state: absent
+  delegate_to: "{{ hypervisor_host }}"
+
+- name: Set new machine uuid
+  set_fact:
+    vm_uuid: "{{ provision.stderr | split(' ') | last }}"
+  delegate_to: "{{ hypervisor_host }}"
+
+- name: Get virtual info
+  command: vmadm get {{ vm_uuid }}
+  delegate_to: "{{ hypervisor_host }}"
+  register: vm_info
+
+- debug:
+    msg: "{{ vm_info.stdout | from_json | community.general.json_query('nics[?primary==`true`].ip') }}"
+
+# - name: Waiting 10 secs for SSH daemon
+#   wait_for:
+#     host: "{{ nics[0]['ip'] }}"
+#     port: 22
+#     search_regex: OpenSSH
+#      delegate_to: "{{ hypervisor_host }}"
+#      when: provision_mode
