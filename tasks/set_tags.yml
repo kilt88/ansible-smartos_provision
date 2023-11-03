@@ -1,0 +1,22 @@
+---
+
+- name: Create Ansible tmp file for tags json
+  command: mktemp /var/tmp/ansible.XXXXXXX
+  register: tmp_set_tags_json
+  delegate_to: "{{ hypervisor_host }}"
+
+- name: Populate tags template
+  template:
+    src: set_tags.json.j2
+    dest: "{{ tmp_set_tags_json.stdout }}"
+  delegate_to: "{{ hypervisor_host }}"
+
+- name: Set tags
+  shell: cat {{ tmp_set_tags_json.stdout }} | vmadm update {{ vmadm_list.stdout }}
+  delegate_to: "{{ hypervisor_host }}"
+
+- name: Clean up provisioning template
+  file:
+    path: "{{ tmp_set_tags_json.stdout }}"
+    state: absent
+  delegate_to: "{{ hypervisor_host }}"

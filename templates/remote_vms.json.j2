@@ -10,7 +10,11 @@
 {%                           endif %}
 {%   endfor %}
       ],
-      "tags": { "role": "{{ host.role }}" }
+      "tags": {
+        "role": "{{ host.role }}",
+        "roles": "{{ host.roles }}",
+        "server_set": "{{ host.server_set }}"
+      }
     }{% if not loop.last %},
 {%      endif %}
 {% endfor %}
