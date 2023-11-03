@@ -171,8 +171,4 @@
     , "cloud-init:user-data": "{{ cloudinit_custom }}"
 {% endif %}
   }
-, "tags": {
-      "role": "{{ group_names[0] }}",
-      "compute_host": "{{ hypervisor_host }}"
-  }
 }
